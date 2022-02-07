@@ -314,12 +314,12 @@ func main() {
 		triggerBuild      bool
 		runid             int
 	)
-	flag.BoolVar(&downloadArtifacts, "downloadArtifacts", false, "Download Artifacts")
-	flag.BoolVar(&printlog, "printlog", false, "Print log")
-	flag.BoolVar(&triggerBuild, "triggerBuild", false, "Trigger build")
-	flag.IntVar(&runid, "runid", 0, "Run job id")
-	flag.StringVar(&jobName, "jobName", "github-pipeline", "Jenkins Job Name")
-	flag.StringVar(&token, "token", "", "Bridge Request Token")
+	flag.BoolVar(&downloadArtifacts, "downloadArtifacts", false, "是否下载产物")
+	flag.BoolVar(&printlog, "printlog", false, "是否打印日志")
+	flag.BoolVar(&triggerBuild, "triggerBuild", false, "是否触发编译")
+	flag.IntVar(&runid, "runid", 0, "job runid")
+	flag.StringVar(&jobName, "jobName", "github-pipeline", "要触发的 Jenkins 任务名")
+	flag.StringVar(&token, "token", "", "bridge server token")
 	flag.Parse()
 
 	var cl Client
