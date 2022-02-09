@@ -195,6 +195,7 @@ func (cl *Client) DownloadArtifacts() {
 // 打印日志
 func (cl *Client) PrintLog() {
 	offset := 0
+printlog:
 	for {
 		status := cl.GetJobStatus()
 		var res string
@@ -204,7 +205,7 @@ func (cl *Client) PrintLog() {
 		}
 		switch status {
 		case "Success":
-			break
+			break printlog
 		case "Fail":
 			os.Exit(1) // Nonzero value: failure
 		case "Progress":
