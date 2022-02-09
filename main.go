@@ -338,7 +338,8 @@ func main() {
 		cl.token = token
 	}
 
-	cl.SetupCloseHandler()
+	// cl.SetupCloseHandler()
+
 	if triggerBuild == true {
 		if runid != 0 {
 			fmt.Println("参数中检测到 runid , 跳过构建")
