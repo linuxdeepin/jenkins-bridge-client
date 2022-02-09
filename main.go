@@ -233,7 +233,13 @@ func GetProject() string {
 }
 
 func GetReqId() int {
-	reqId, _ := strconv.Atoi(strings.Split(os.Getenv("GITHUB_REF_NAME"), "/")[0])
+	// When workflows triggered on pull_request, GITHUB_REF_NAME is [pr-number]/merge
+	// reqId, _ := strconv.Atoi(strings.Split(os.Getenv("GITHUB_REF_NAME"), "/")[0])
+
+	// When workflows triggered on pull_request_target, GITHUB_REF_NAME is master
+	// we set CHANGE_ID: ${{ github.event.pull_request.number }} in workflows env
+	reqId, _ := strconv.Atoi(os.Getenv("CHANGE_ID"))
+
 	return reqId
 }
 
