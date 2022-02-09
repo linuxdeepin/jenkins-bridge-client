@@ -10,6 +10,8 @@ go build .
 
 ```
 Usage of ./jenkins-bridge-client:
+  -cancelBuild
+    	是否取消编译
   -downloadArtifacts
     	是否下载产物
   -jobName string

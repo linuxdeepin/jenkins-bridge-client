@@ -317,6 +317,7 @@ func main() {
 		downloadArtifacts bool
 		jobName           string
 		token             string
+		cancelBuild       bool
 		printlog          bool
 		triggerBuild      bool
 		runid             int
@@ -324,6 +325,7 @@ func main() {
 	flag.BoolVar(&downloadArtifacts, "downloadArtifacts", false, "是否下载产物")
 	flag.BoolVar(&printlog, "printlog", false, "是否打印日志")
 	flag.BoolVar(&triggerBuild, "triggerBuild", false, "是否触发编译")
+	flag.BoolVar(&cancelBuild, "cancelBuild", false, "是否取消编译")
 	flag.IntVar(&runid, "runid", 0, "job runid")
 	flag.StringVar(&jobName, "jobName", "github-pipeline", "要触发的 Jenkins 任务名")
 	flag.StringVar(&token, "token", "", "bridge server token")
@@ -358,5 +360,9 @@ func main() {
 
 	if downloadArtifacts == true {
 		cl.DownloadArtifacts()
+	}
+
+	if cancelBuild == true {
+		cl.GetApiJobCancel()
 	}
 }
