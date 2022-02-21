@@ -317,6 +317,7 @@ func main() {
 		downloadArtifacts bool
 		jobName           string
 		token             string
+		host              string
 		cancelBuild       bool
 		printlog          bool
 		triggerBuild      bool
@@ -329,11 +330,17 @@ func main() {
 	flag.IntVar(&runid, "runid", 0, "job runid")
 	flag.StringVar(&jobName, "jobName", "github-pipeline", "要触发的 Jenkins 任务名")
 	flag.StringVar(&token, "token", "", "bridge server token")
+	flag.StringVar(&host, "host", "", "bridge server address")
 	flag.Parse()
 
 	var cl Client
 	cl.job_name = jobName
-	cl.host = "https://jenkins-bridge-deepin-pre.uniontech.com/"
+	if len(host) > 0 {
+		cl.host = host
+	} else {
+		cl.host = "https://jenkins-bridge-deepin-pre.uniontech.com/"
+	}
+
 	if len(token) > 0 {
 		cl.token = token
 	}
