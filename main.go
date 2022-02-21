@@ -333,7 +333,7 @@ func main() {
 
 	var cl Client
 	cl.job_name = jobName
-	cl.host = "https://bridge.daydream.ac.cn"
+	cl.host = "https://jenkins-bridge-deepin-pre.uniontech.com/"
 	if len(token) > 0 {
 		cl.token = token
 	}
