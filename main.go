@@ -219,6 +219,11 @@ type JobBuild struct {
 	ID int `json:"ID"`
 }
 
+// 创建同步任务 /api/job/sync
+type JobSync struct {
+	ID int `json:"ID"`
+}
+
 type Build struct {
 	Branch        string `json:"branch"`
 	CommentAuthor string `json:"comment_author"`
@@ -242,6 +247,31 @@ func GetReqId() int {
 	reqId, _ := strconv.Atoi(os.Getenv("CHANGE_ID"))
 
 	return reqId
+}
+
+func (cl *Client) PostApiJobSync() {
+	client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
+	resp, err := client.R().
+		SetBody(Build{
+			Project: GetProject(),
+		}).
+		SetHeader("Accept", "application/json").
+		SetHeader("X-token", cl.token).
+		Post(cl.host + "/api/job/sync")
+
+	if resp.StatusCode() != 200 {
+		log.Fatal("trigger build fail, StatusCode not 200")
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+	var jobSync JobSync
+	err = json.Unmarshal([]byte(resp.Body()), &jobSync)
+	if err != nil {
+		log.Fatal(err)
+	}
+	cl.id = jobSync.ID
 }
 
 func (cl *Client) PostApiJobBuild() {
@@ -322,11 +352,13 @@ func main() {
 		printlog          bool
 		triggerBuild      bool
 		runid             int
+		triggerSync       bool
 	)
 	flag.BoolVar(&downloadArtifacts, "downloadArtifacts", false, "是否下载产物")
 	flag.BoolVar(&printlog, "printlog", false, "是否打印日志")
 	flag.BoolVar(&triggerBuild, "triggerBuild", false, "是否触发编译")
 	flag.BoolVar(&cancelBuild, "cancelBuild", false, "是否取消编译")
+	flag.BoolVar(&triggerSync, "triggerSync", false, "是否触发同步")
 	flag.IntVar(&runid, "runid", 0, "job runid")
 	flag.StringVar(&jobName, "jobName", "github-pipeline", "要触发的 Jenkins 任务名")
 	flag.StringVar(&token, "token", "", "bridge server token")
@@ -347,7 +379,12 @@ func main() {
 
 	// cl.SetupCloseHandler()
 
-	if triggerBuild == true {
+	if triggerSync {
+		cl.PostApiJobSync()
+		fmt.Println(cl.id)
+	}
+
+	if triggerBuild {
 		if runid != 0 {
 			fmt.Println("参数中检测到 runid , 跳过构建")
 		} else {
@@ -362,15 +399,15 @@ func main() {
 		cl.id = runid
 	}
 
-	if printlog == true {
+	if printlog {
 		cl.PrintLog()
 	}
 
-	if downloadArtifacts == true {
+	if downloadArtifacts {
 		cl.DownloadArtifacts()
 	}
 
-	if cancelBuild == true {
+	if cancelBuild {
 		cl.GetApiJobCancel()
 	}
 }
