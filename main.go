@@ -195,7 +195,6 @@ func (cl *Client) DownloadArtifacts() {
 // 打印日志
 func (cl *Client) PrintLog() {
 	offset := 0
-printlog:
 	for {
 		status := cl.GetJobStatus()
 		var res string
@@ -205,7 +204,7 @@ printlog:
 		}
 		switch status {
 		case "Success":
-			break printlog
+			return
 		case "Fail":
 			os.Exit(1) // Nonzero value: failure
 		case "Progress":
@@ -370,7 +369,7 @@ func main() {
 	if len(host) > 0 {
 		cl.host = host
 	} else {
-		cl.host = "https://jenkins-bridge-deepin-pre.uniontech.com/"
+		cl.host = "https://jenkins-bridge-deepin-pre.uniontech.com"
 	}
 
 	if len(token) > 0 {
