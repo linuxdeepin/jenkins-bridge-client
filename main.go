@@ -223,6 +223,11 @@ type JobSync struct {
 	ID int `json:"ID"`
 }
 
+// 创建Abicheck 任务 /api/job/abicheck
+type JobAbicheck struct {
+	ID int `json:"ID"`
+}
+
 type Build struct {
 	Branch        string `json:"branch"`
 	CommentAuthor string `json:"comment_author"`
@@ -273,17 +278,37 @@ func (cl *Client) PostApiJobSync() {
 	cl.id = jobSync.ID
 }
 
-func (cl *Client) PostApiJobBuild() {
-	// check env not empty
-	var envs = []string{"GITHUB_BRANCH", "GITHUB_ACTOR", "GITHUB_REPOSITORY_OWNER", "GITHUB_REPOSITORY", "GITHUB_EVENT_NAME", "GITHUB_REF_NAME"}
+func (cl *Client) PostApiJobAbicheck() {
+	client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
+	resp, err := client.R().
+		SetBody(Build{
+			Branch:        os.Getenv("GITHUB_BASE_REF"),
+			CommentAuthor: os.Getenv("GITHUB_ACTOR"),
+			GroupName:     os.Getenv("GITHUB_REPOSITORY_OWNER"),
+			Project:       GetProject(),
+			RequestEvent:  os.Getenv("GITHUB_EVENT_NAME"),
+			RequestId:     GetReqId(),
+		}).
+		SetHeader("Accept", "application/json").
+		SetHeader("X-token", cl.token).
+		Post(cl.host + "/api/job/abicheck")
 
-	for i := range envs {
-		if os.Getenv(envs[i]) == "" {
-			//log.Fatalln(envs[i] + " is empty")
-			//log.Println(envs[i] + " is empty")
-		}
+	if resp.StatusCode() != 200 {
+		log.Fatal("trigger build fail, StatusCode not 200")
+	}
+	if err != nil {
+		log.Fatal(err)
 	}
 
+	var jobAbicheck JobAbicheck
+
+	json.Unmarshal([]byte(resp.Body()), &jobAbicheck)
+
+	cl.id = jobAbicheck.ID
+}
+
+func (cl *Client) PostApiJobBuild() {
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
 	resp, err := client.R().
@@ -349,12 +374,14 @@ func main() {
 		host              string
 		cancelBuild       bool
 		printlog          bool
+		triggerAbicheck   bool
 		triggerBuild      bool
 		runid             int
 		triggerSync       bool
 	)
 	flag.BoolVar(&downloadArtifacts, "downloadArtifacts", false, "是否下载产物")
 	flag.BoolVar(&printlog, "printlog", false, "是否打印日志")
+	flag.BoolVar(&triggerAbicheck, "triggerAbicheck", false, "是否触发Abicheck")
 	flag.BoolVar(&triggerBuild, "triggerBuild", false, "是否触发编译")
 	flag.BoolVar(&cancelBuild, "cancelBuild", false, "是否取消编译")
 	flag.BoolVar(&triggerSync, "triggerSync", false, "是否触发同步")
