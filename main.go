@@ -219,7 +219,6 @@ func (cl *Client) PrintLog() {
 //  /api/job/sync
 //  /api/job/abicheck
 //  /api/job/archlinux
-//  /api/job/archlinux-push-build
 
 type JobTriggerJenkins struct {
 	ID int `json:"ID"`
@@ -332,32 +331,6 @@ func (cl *Client) PostApiJobArchlinux() {
 	cl.id = jobArchlinux.ID
 }
 
-func (cl *Client) PostApiJobArchlinuxBuildAndPush() {
-	client := resty.New()
-	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
-	resp, err := client.R().
-		SetBody(Build{
-			Project: GetProject(),
-			Sha:     os.Getenv("GITHUB_SHA"),
-		}).
-		SetHeader("Accept", "application/json").
-		SetHeader("X-token", cl.token).
-		Post(cl.host + "/api/job/archlinux-push-build")
-
-	if resp.StatusCode() != 200 {
-		log.Fatal("trigger build fail, StatusCode not 200")
-	}
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var jobArchlinuxBuildAndPush JobTriggerJenkins
-
-	json.Unmarshal([]byte(resp.Body()), &jobArchlinuxBuildAndPush)
-
-	cl.id = jobArchlinuxBuildAndPush.ID
-}
-
 func (cl *Client) PostApiJobBuild() {
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
@@ -418,24 +391,22 @@ func (cl *Client) SetupCloseHandler() {
 
 func main() {
 	var (
-		downloadArtifacts            bool
-		jobName                      string
-		token                        string
-		host                         string
-		cancelBuild                  bool
-		printlog                     bool
-		triggerAbicheck              bool
-		triggerBuild                 bool
-		runid                        int
-		triggerSync                  bool
-		triggerArchlinux             bool
-		triggerArchlinuxBuildAndPush bool
+		downloadArtifacts bool
+		jobName           string
+		token             string
+		host              string
+		cancelBuild       bool
+		printlog          bool
+		triggerAbicheck   bool
+		triggerBuild      bool
+		runid             int
+		triggerSync       bool
+		triggerArchlinux  bool
 	)
 	flag.BoolVar(&downloadArtifacts, "downloadArtifacts", false, "是否下载产物")
 	flag.BoolVar(&printlog, "printlog", false, "是否打印日志")
 	flag.BoolVar(&triggerAbicheck, "triggerAbicheck", false, "是否触发Abicheck")
 	flag.BoolVar(&triggerArchlinux, "triggerArchlinux", false, "是否触发Archlinux编译")
-	flag.BoolVar(&triggerArchlinuxBuildAndPush, "triggerArchlinuxBuildAndPush", false, "是否触发Archlinux 编译并推送")
 	flag.BoolVar(&triggerBuild, "triggerBuild", false, "是否触发编译")
 	flag.BoolVar(&cancelBuild, "cancelBuild", false, "是否取消编译")
 	flag.BoolVar(&triggerSync, "triggerSync", false, "是否触发同步")
@@ -466,11 +437,6 @@ func main() {
 
 	if triggerArchlinux {
 		cl.PostApiJobArchlinux()
-		fmt.Println(cl.id)
-	}
-
-	if triggerArchlinuxBuildAndPush {
-		cl.PostApiJobArchlinuxBuildAndPush()
 		fmt.Println(cl.id)
 	}
 
