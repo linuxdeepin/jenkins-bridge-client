@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"strconv"
 	"strings"
@@ -232,7 +233,8 @@ type Build struct {
 	RequestEvent  string `json:"request_event"`
 	RequestId     int    `json:"request_id"`
 	Sha           string `json:"sha"`
-	IsPush        bool   `json:"isPush"`
+	IsPush        bool   `json:"is_push"`
+	AuthorEmail   string `json:"author_email"`
 }
 
 func GetProject() string {
@@ -279,6 +281,7 @@ func (cl *Client) PostApiJobSync() {
 func (cl *Client) PostApiJobAbicheck() {
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
+	authorEmailOutput, _ := exec.Command("git", "log", "-1", "--pretty=format:'%ae'").Output()
 	resp, err := client.R().
 		SetBody(Build{
 			Branch:        os.Getenv("GITHUB_BASE_REF"),
@@ -287,6 +290,7 @@ func (cl *Client) PostApiJobAbicheck() {
 			Project:       GetProject(),
 			RequestEvent:  os.Getenv("GITHUB_EVENT_NAME"),
 			RequestId:     GetReqId(),
+			AuthorEmail:   string(authorEmailOutput),
 		}).
 		SetHeader("Accept", "application/json").
 		SetHeader("X-token", cl.token).
