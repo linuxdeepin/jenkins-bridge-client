@@ -232,6 +232,7 @@ type Build struct {
 	RequestEvent  string `json:"request_event"`
 	RequestId     int    `json:"request_id"`
 	Sha           string `json:"sha"`
+	IsPush        bool   `json:"isPush"`
 }
 
 func GetProject() string {
@@ -312,6 +313,7 @@ func (cl *Client) PostApiJobArchlinux() {
 		SetBody(Build{
 			Project: GetProject(),
 			Sha:     os.Getenv("GITHUB_SHA"),
+			IsPush:  os.Getenv("GITHUB_EVENT_NAME") == "push",
 		}).
 		SetHeader("Accept", "application/json").
 		SetHeader("X-token", cl.token).
