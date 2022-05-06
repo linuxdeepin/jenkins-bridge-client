@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -15,6 +17,8 @@ import (
 
 	"github.com/dlclark/regexp2"
 	"github.com/go-resty/resty/v2"
+	"github.com/google/go-github/v44/github"
+	"github.com/myml/ghtoken"
 )
 
 // Client 客户端
@@ -23,6 +27,15 @@ type Client struct {
 	host     string
 	token    string
 	id       int
+
+	gh *github.Client
+}
+
+func NewClient() *Client {
+	var client Client
+	tr := ghtoken.NewGitHubToken(http.DefaultTransport)
+	client.gh = github.NewClient(&http.Client{Transport: tr})
+	return &client
 }
 
 // GetApiJobCancel 取消任务
@@ -337,9 +350,30 @@ func (cl *Client) PostApiJobArchlinux() {
 	cl.id = jobArchlinux.ID
 }
 
+func (cl *Client) GetPRAuthor(owner, project string, prID int) (author, email string, err error) {
+	req, _, err := cl.gh.PullRequests.Get(context.Background(), owner, project, prID)
+	if err != nil {
+		return "", "", fmt.Errorf("get pull request: %w", err)
+	}
+	user, _, err := cl.gh.Users.Get(context.Background(), req.GetUser().GetLogin())
+	if err != nil {
+		return "", "", fmt.Errorf("get user: %w", err)
+	}
+	return user.GetLogin(), user.GetEmail(), nil
+}
+
 func (cl *Client) PostApiJobBuild() {
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
+
+	owner := os.Getenv("GITHUB_REPOSITORY_OWNER")
+
+	// if it fail, use the empty string
+	author, email, err := cl.GetPRAuthor(owner, GetProject(), GetReqId())
+	if err != nil {
+		log.Println("get pr author fail: ", err)
+	}
+
 	resp, err := client.R().
 		//// debug pr https://github.com/linuxdeepin/dde-dock/pull/364
 		//SetBody(Build{
@@ -352,11 +386,12 @@ func (cl *Client) PostApiJobBuild() {
 		//}).
 		SetBody(Build{
 			Branch:        os.Getenv("GITHUB_BASE_REF"),
-			CommentAuthor: os.Getenv("GITHUB_ACTOR"),
 			GroupName:     os.Getenv("GITHUB_REPOSITORY_OWNER"),
 			Project:       GetProject(),
 			RequestEvent:  os.Getenv("GITHUB_EVENT_NAME"),
 			RequestId:     GetReqId(),
+			CommentAuthor: author,
+			AuthorEmail:   email,
 		}).
 		SetHeader("Accept", "application/json").
 		SetHeader("X-token", cl.token).
@@ -422,7 +457,7 @@ func main() {
 	flag.StringVar(&host, "host", "", "bridge server address")
 	flag.Parse()
 
-	var cl Client
+	cl := NewClient()
 	cl.job_name = jobName
 	if len(host) > 0 {
 		cl.host = host
