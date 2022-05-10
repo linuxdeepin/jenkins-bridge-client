@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -113,7 +114,7 @@ func (cl *Client) GetJobStatus() string {
 		Get(cl.host + "/api/job/info")
 
 	if resp.StatusCode() != 200 {
-		log.Fatal("trigger build fail, StatusCode not 200")
+		log.Fatal("get job status fail, StatusCode not 200")
 	}
 
 	if err != nil {
@@ -221,8 +222,22 @@ func (cl *Client) PrintLog() {
 		case "Fail":
 			os.Exit(1) // Nonzero value: failure
 		case "Progress":
-			time.Sleep(1 * time.Second)
 		}
+		time.Sleep(1 * time.Second)
+	}
+}
+
+// Wait job end
+func (cl *Client) Wait() error {
+	for {
+		status := cl.GetJobStatus()
+		switch status {
+		case "Success":
+			return nil
+		case "Fail":
+			return fmt.Errorf("job fail")
+		}
+		time.Sleep(time.Second)
 	}
 }
 
@@ -266,6 +281,13 @@ func GetReqId() int {
 	reqId, _ := strconv.Atoi(os.Getenv("CHANGE_ID"))
 
 	return reqId
+}
+
+// R method creates a new request instance, its used for Get, Post, Put, Delete, Patch, Head, Options, etc.
+func (cl *Client) R() *resty.Request {
+	client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
+	return client.R().SetHeader("X-token", cl.token)
 }
 
 func (cl *Client) PostApiJobSync() {
@@ -436,7 +458,76 @@ func (cl *Client) SetupCloseHandler() {
 	}()
 }
 
+func subcommands(args []string) bool {
+	if len(os.Args) < 2 {
+		return false
+	}
+	cl := NewClient()
+	switch os.Args[1] {
+	case "wait": // wait job end
+		var runid int
+		var server, token string
+		waitFlag := flag.NewFlagSet("wait", flag.ExitOnError)
+		waitFlag.IntVar(&runid, "runid", 0, "job runid")
+		waitFlag.StringVar(&server, "server", "", "server")
+		waitFlag.StringVar(&token, "token", "", "token (env BRIDGE_TOKEN)")
+		waitFlag.Parse(os.Args[2:])
+		if len(token) == 0 {
+			token = os.Getenv("BRIDGE_TOKEN")
+		}
+		if runid == 0 {
+			waitFlag.Usage()
+			os.Exit(1)
+		}
+		cl.host = server
+		cl.token = token
+		cl.id = runid
+		err := cl.Wait()
+		if err != nil {
+			log.Fatal(err)
+		}
+		return true
+	case "cat": // print job artifact
+		var runid int
+		var server, token string
+		var filename string
+		catFlag := flag.NewFlagSet("cat", flag.ExitOnError)
+		catFlag.IntVar(&runid, "runid", 0, "job runid")
+		catFlag.StringVar(&filename, "file", "", "file path")
+		catFlag.StringVar(&server, "server", "", "server")
+		catFlag.StringVar(&token, "token", "", "token (env BRIDGE_TOKEN)")
+		catFlag.Parse(os.Args[2:])
+		if len(token) == 0 {
+			token = os.Getenv("BRIDGE_TOKEN")
+		}
+		if runid == 0 || len(filename) == 0 {
+			catFlag.Usage()
+			os.Exit(1)
+		}
+		cl.host = server
+		cl.token = token
+		cl.id = runid
+		for _, f := range cl.GetApiJobArtifacts().Files {
+			if f.Name == filename {
+				resp, err := cl.R().SetDoNotParseResponse(true).Get(f.URL)
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer resp.RawBody().Close()
+				io.Copy(os.Stdout, resp.RawBody())
+			}
+		}
+		return true
+	}
+	return false
+}
+
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	if subcommands(os.Args) {
+		return
+	}
 	var (
 		downloadArtifacts bool
 		jobName           string
