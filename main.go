@@ -214,7 +214,7 @@ func (cl *Client) PrintLog() {
 		var res string
 		res, offset = cl.GetApiJobLog(offset)
 		if len(res) > 0 {
-			log.Println(res)
+			fmt.Print(res)
 		}
 		switch status {
 		case "Success":
