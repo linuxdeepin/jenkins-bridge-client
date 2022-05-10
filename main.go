@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"os/signal"
 	"strconv"
 	"strings"
@@ -254,6 +253,9 @@ func GetProject() string {
 	// GITHUB_REPOSITORY="org/project" => prject
 	return strings.Split(os.Getenv("GITHUB_REPOSITORY"), "/")[1]
 }
+func GetOwner() string {
+	return os.Getenv("GITHUB_REPOSITORY_OWNER")
+}
 
 func GetReqId() int {
 	// When workflows triggered on pull_request, GITHUB_REF_NAME is [pr-number]/merge
@@ -294,16 +296,21 @@ func (cl *Client) PostApiJobSync() {
 func (cl *Client) PostApiJobAbicheck() {
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
-	authorEmailOutput, _ := exec.Command("git", "log", "-1", "--pretty=format:'%ae'").Output()
+
+	author, email, err := cl.GetPRAuthor(GetOwner(), GetProject(), GetReqId())
+	if err != nil {
+		// Ignore failure
+		log.Println("get pr author fail: ", err)
+	}
 	resp, err := client.R().
 		SetBody(Build{
 			Branch:        os.Getenv("GITHUB_BASE_REF"),
-			CommentAuthor: os.Getenv("GITHUB_ACTOR"),
 			GroupName:     os.Getenv("GITHUB_REPOSITORY_OWNER"),
 			Project:       GetProject(),
 			RequestEvent:  os.Getenv("GITHUB_EVENT_NAME"),
 			RequestId:     GetReqId(),
-			AuthorEmail:   string(authorEmailOutput),
+			CommentAuthor: author,
+			AuthorEmail:   email,
 		}).
 		SetHeader("Accept", "application/json").
 		SetHeader("X-token", cl.token).
@@ -350,6 +357,7 @@ func (cl *Client) PostApiJobArchlinux() {
 	cl.id = jobArchlinux.ID
 }
 
+// GetPRAuthor get login name and email of the author of the pull request
 func (cl *Client) GetPRAuthor(owner, project string, prID int) (author, email string, err error) {
 	req, _, err := cl.gh.PullRequests.Get(context.Background(), owner, project, prID)
 	if err != nil {
@@ -366,11 +374,9 @@ func (cl *Client) PostApiJobBuild() {
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
 
-	owner := os.Getenv("GITHUB_REPOSITORY_OWNER")
-
-	// if it fail, use the empty string
-	author, email, err := cl.GetPRAuthor(owner, GetProject(), GetReqId())
+	author, email, err := cl.GetPRAuthor(GetOwner(), GetProject(), GetReqId())
 	if err != nil {
+		// Ignore failure
 		log.Println("get pr author fail: ", err)
 	}
 
