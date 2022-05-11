@@ -283,6 +283,16 @@ func GetReqId() int {
 	return reqId
 }
 
+func getEvent() string {
+	return os.Getenv("GITHUB_EVENT_NAME")
+}
+func getBranch() string {
+	if getEvent() == "push" {
+		return os.Getenv("GITHUB_REF_NAME")
+	}
+	return os.Getenv("GITHUB_BASE_REF")
+}
+
 // R method creates a new request instance, its used for Get, Post, Put, Delete, Patch, Head, Options, etc.
 func (cl *Client) R() *resty.Request {
 	client := resty.New()
@@ -326,7 +336,7 @@ func (cl *Client) PostApiJobAbicheck() {
 	}
 	resp, err := client.R().
 		SetBody(Build{
-			Branch:        os.Getenv("GITHUB_BASE_REF"),
+			Branch:        getBranch(),
 			GroupName:     os.Getenv("GITHUB_REPOSITORY_OWNER"),
 			Project:       GetProject(),
 			RequestEvent:  os.Getenv("GITHUB_EVENT_NAME"),
@@ -413,7 +423,7 @@ func (cl *Client) PostApiJobBuild() {
 		//	RequestId:     364,
 		//}).
 		SetBody(Build{
-			Branch:        os.Getenv("GITHUB_BASE_REF"),
+			Branch:        getBranch(),
 			GroupName:     os.Getenv("GITHUB_REPOSITORY_OWNER"),
 			Project:       GetProject(),
 			RequestEvent:  os.Getenv("GITHUB_EVENT_NAME"),
