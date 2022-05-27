@@ -70,7 +70,13 @@ type JobLog struct {
 // GetLog 获取构建日志内容和偏移量
 func (cl *Client) GetApiJobLog(offset int) (string, int) {
 	client := resty.New()
-	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
+	client.
+		SetRetryCount(3).
+		SetRetryWaitTime(5 * time.Second).
+		SetRetryMaxWaitTime(20 * time.Second).
+		AddRetryCondition(func(r *resty.Response, err error) bool {
+			return r.StatusCode() != 200
+		})
 	resp, err := client.R().
 		SetQueryParams(map[string]string{
 			"id":     strconv.Itoa(cl.id),
@@ -103,7 +109,12 @@ type JobInfo struct {
 func (cl *Client) GetJobStatus() string {
 
 	client := resty.New()
-	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
+	client.SetRetryCount(3).
+		SetRetryWaitTime(5 * time.Second).
+		SetRetryMaxWaitTime(20 * time.Second).
+		AddRetryCondition(func(r *resty.Response, err error) bool {
+			return r.StatusCode() != 200
+		})
 	resp, err := client.R().
 		SetQueryParams(map[string]string{
 			"id": strconv.Itoa(cl.id),
