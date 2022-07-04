@@ -272,6 +272,7 @@ type Build struct {
 	Sha           string `json:"sha"`
 	IsPush        bool   `json:"is_push"`
 	AuthorEmail   string `json:"author_email"`
+	Topic         string `json:"topic"`
 }
 
 func GetProject() string {
@@ -339,7 +340,7 @@ func (cl *Client) PostApiJobAbicheck() {
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
 
-	author, email, err := cl.GetPRAuthor(GetOwner(), GetProject(), GetReqId())
+	author, email, ref, err := cl.GetPRAuthorAndRef(GetOwner(), GetProject(), GetReqId())
 	if err != nil {
 		// Ignore failure
 		log.Println("get pr author fail: ", err)
@@ -353,6 +354,7 @@ func (cl *Client) PostApiJobAbicheck() {
 			RequestId:     GetReqId(),
 			CommentAuthor: author,
 			AuthorEmail:   email,
+			Topic:         ref,
 		}).
 		SetHeader("Accept", "application/json").
 		SetHeader("X-token", cl.token).
@@ -400,23 +402,23 @@ func (cl *Client) PostApiJobArchlinux() {
 }
 
 // GetPRAuthor get login name and email of the author of the pull request
-func (cl *Client) GetPRAuthor(owner, project string, prID int) (author, email string, err error) {
+func (cl *Client) GetPRAuthorAndRef(owner, project string, prID int) (author, email string, ref string, err error) {
 	req, _, err := cl.gh.PullRequests.Get(context.Background(), owner, project, prID)
 	if err != nil {
-		return "", "", fmt.Errorf("get pull request: %w", err)
+		return "", "", "", fmt.Errorf("get pull request: %w", err)
 	}
 	user, _, err := cl.gh.Users.Get(context.Background(), req.GetUser().GetLogin())
 	if err != nil {
-		return "", "", fmt.Errorf("get user: %w", err)
+		return "", "", "", fmt.Errorf("get user: %w", err)
 	}
-	return user.GetLogin(), user.GetEmail(), nil
+	return user.GetLogin(), user.GetEmail(), req.Head.GetRef(), nil
 }
 
 func (cl *Client) PostApiJobBuild() {
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
 
-	author, email, err := cl.GetPRAuthor(GetOwner(), GetProject(), GetReqId())
+	author, email, _, err := cl.GetPRAuthorAndRef(GetOwner(), GetProject(), GetReqId())
 	if err != nil {
 		// Ignore failure
 		log.Println("get pr author fail: ", err)
