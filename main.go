@@ -19,6 +19,11 @@ import (
 	"github.com/google/go-github/v44/github"
 	"github.com/myml/ghtoken"
 )
+// topic 规范：pr branch 以TOPIC_PREFIX 开始时会被加入到topic仓库中
+const (
+	TOPIC_PREFIX = "topic-"
+	TOPIC_SIZE = len(TOPIC_PREFIX)
+)
 
 // Client 客户端
 type Client struct {
@@ -340,7 +345,7 @@ func (cl *Client) PostApiJobAbicheck() {
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
 
-	author, email, ref, err := cl.GetPRAuthorAndRef(GetOwner(), GetProject(), GetReqId())
+	author, email, _, err := cl.GetPRAuthorAndRef(GetOwner(), GetProject(), GetReqId())
 	if err != nil {
 		// Ignore failure
 		log.Println("get pr author fail: ", err)
@@ -354,7 +359,6 @@ func (cl *Client) PostApiJobAbicheck() {
 			RequestId:     GetReqId(),
 			CommentAuthor: author,
 			AuthorEmail:   email,
-			Topic:         ref,
 		}).
 		SetHeader("Accept", "application/json").
 		SetHeader("X-token", cl.token).
@@ -418,10 +422,17 @@ func (cl *Client) PostApiJobBuild() {
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
 
-	author, email, _, err := cl.GetPRAuthorAndRef(GetOwner(), GetProject(), GetReqId())
+	author, email, ref, err := cl.GetPRAuthorAndRef(GetOwner(), GetProject(), GetReqId())
 	if err != nil {
 		// Ignore failure
 		log.Println("get pr author fail: ", err)
+	}
+
+	// branch must start with topic- will added into topic repo, or will not imported to any topic repo
+	if strings.HasPrefix(ref, TOPIC_PREFIX) {
+		ref = ref[TOPIC_SIZE:len(ref)]
+	} else {
+		ref = ""
 	}
 
 	resp, err := client.R().
@@ -442,6 +453,7 @@ func (cl *Client) PostApiJobBuild() {
 			RequestId:     GetReqId(),
 			CommentAuthor: author,
 			AuthorEmail:   email,
+			Topic:         ref,
 		}).
 		SetHeader("Accept", "application/json").
 		SetHeader("X-token", cl.token).
