@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/dlclark/regexp2 v1.4.0
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/google/go-github/v44 v44.0.0
+	github.com/google/go-github/v44 v44.1.0
 	github.com/myml/ghtoken v0.0.0-20220506023416-6750199c71f6
 )
 
