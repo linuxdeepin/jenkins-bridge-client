@@ -19,10 +19,11 @@ import (
 	"github.com/google/go-github/v44/github"
 	"github.com/myml/ghtoken"
 )
+
 // topic 规范：pr branch 以TOPIC_PREFIX 开始时会被加入到topic仓库中
 const (
 	TOPIC_PREFIX = "topic-"
-	TOPIC_SIZE = len(TOPIC_PREFIX)
+	TOPIC_SIZE   = len(TOPIC_PREFIX)
 )
 
 // Client 客户端
@@ -278,6 +279,7 @@ type Build struct {
 	IsPush        bool   `json:"is_push"`
 	AuthorEmail   string `json:"author_email"`
 	Topic         string `json:"topic"`
+	ReversionID   string `json:"reversionID"`
 }
 
 func GetProject() string {
@@ -297,6 +299,21 @@ func GetReqId() int {
 	reqId, _ := strconv.Atoi(os.Getenv("CHANGE_ID"))
 
 	return reqId
+}
+
+func (cl *Client) getCommitSHA(owner, repo string, prID int) string {
+	// get commit sha
+	// get merged commit sha, while get base sha if not merged
+	pr, _, err := cl.gh.PullRequests.Get(context.Background(), owner, repo, prID)
+	if err != nil {
+		log.Println("get pr reversion failed: ", err)
+		return ""
+	}
+	if pr.GetMerged() {
+		return pr.GetMergeCommitSHA()
+	}
+
+	return pr.GetBase().GetSHA()
 }
 
 func getEvent() string {
@@ -353,9 +370,9 @@ func (cl *Client) PostApiJobAbicheck() {
 	resp, err := client.R().
 		SetBody(Build{
 			Branch:        getBranch(),
-			GroupName:     os.Getenv("GITHUB_REPOSITORY_OWNER"),
+			GroupName:     GetOwner(),
 			Project:       GetProject(),
-			RequestEvent:  os.Getenv("GITHUB_EVENT_NAME"),
+			RequestEvent:  getEvent(),
 			RequestId:     GetReqId(),
 			CommentAuthor: author,
 			AuthorEmail:   email,
@@ -427,10 +444,11 @@ func (cl *Client) PostApiJobBuild() {
 		// Ignore failure
 		log.Println("get pr author fail: ", err)
 	}
+	commitSHA := cl.getCommitSHA(GetOwner(), GetProject(), GetReqId())
 
 	// branch must start with topic- will added into topic repo, or will not imported to any topic repo
 	if strings.HasPrefix(ref, TOPIC_PREFIX) {
-		ref = ref[TOPIC_SIZE:len(ref)]
+		ref = ref[TOPIC_SIZE:]
 	} else {
 		ref = ""
 	}
@@ -454,6 +472,7 @@ func (cl *Client) PostApiJobBuild() {
 			CommentAuthor: author,
 			AuthorEmail:   email,
 			Topic:         ref,
+			ReversionID:   commitSHA,
 		}).
 		SetHeader("Accept", "application/json").
 		SetHeader("X-token", cl.token).
