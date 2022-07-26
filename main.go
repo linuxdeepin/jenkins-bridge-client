@@ -301,6 +301,32 @@ func GetReqId() int {
 	return reqId
 }
 
+func getEvent() string {
+	return os.Getenv("GITHUB_EVENT_NAME")
+}
+
+func getBranch() string {
+	if getEvent() == "push" {
+		return os.Getenv("GITHUB_REF_NAME")
+	}
+	return os.Getenv("GITHUB_BASE_REF")
+}
+
+func (cl *Client) getGithubEvent() string {
+	// because all called by pull_request_target event,
+	// so when pr merged, rename event to pull_request_merged
+	pr, _, err := cl.gh.PullRequests.Get(context.Background(), GetOwner(), GetProject(), GetReqId())
+	event := getEvent()
+	if err != nil {
+		log.Println("get pr merged failed: ", err)
+		return event
+	}
+	if pr.GetMerged() {
+		return "pull_request_merged"
+	}
+	return event
+}
+
 func (cl *Client) getCommitSHA(owner, repo string, prID int) string {
 	// get commit sha
 	// get merged commit sha, while get base sha if not merged
@@ -314,16 +340,6 @@ func (cl *Client) getCommitSHA(owner, repo string, prID int) string {
 	}
 
 	return pr.GetBase().GetSHA()
-}
-
-func getEvent() string {
-	return os.Getenv("GITHUB_EVENT_NAME")
-}
-func getBranch() string {
-	if getEvent() == "push" {
-		return os.Getenv("GITHUB_REF_NAME")
-	}
-	return os.Getenv("GITHUB_BASE_REF")
 }
 
 // R method creates a new request instance, its used for Get, Post, Put, Delete, Patch, Head, Options, etc.
@@ -453,6 +469,8 @@ func (cl *Client) PostApiJobBuild() {
 		ref = ""
 	}
 
+	githubEvent := cl.getGithubEvent()
+
 	resp, err := client.R().
 		//// debug pr https://github.com/linuxdeepin/dde-dock/pull/364
 		//SetBody(Build{
@@ -467,7 +485,7 @@ func (cl *Client) PostApiJobBuild() {
 			Branch:        getBranch(),
 			GroupName:     os.Getenv("GITHUB_REPOSITORY_OWNER"),
 			Project:       GetProject(),
-			RequestEvent:  os.Getenv("GITHUB_EVENT_NAME"),
+			RequestEvent:  githubEvent,
 			RequestId:     GetReqId(),
 			CommentAuthor: author,
 			AuthorEmail:   email,
