@@ -48,16 +48,17 @@ var downloadArtifactsCmd = &cobra.Command{
 func init() {
 	printLogCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
 	printLogCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
-	printLogCmd.Flags().IntVarP(&runid, "runid", "", 0, "")
+	printLogCmd.Flags().IntVarP(&runid, "runid", "", 0, "jenkins run job id")
 	printLogCmd.MarkFlagRequired("runid")
 
 	cancelBuildCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
 	cancelBuildCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
-	cancelBuildCmd.Flags().IntVarP(&runid, "runid", "", 0, "")
+	cancelBuildCmd.Flags().IntVarP(&runid, "runid", "", 0, "jenkins run job id")
 	cancelBuildCmd.MarkFlagRequired("runid")
 
 	downloadArtifactsCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
 	downloadArtifactsCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
+	downloadArtifactsCmd.Flags().IntVarP(&runid, "runid", "", 0, "jenkins run job id")
 	downloadArtifactsCmd.MarkFlagRequired("runid")
 
 	rootCmd.AddCommand(printLogCmd)
