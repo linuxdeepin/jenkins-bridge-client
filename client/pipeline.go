@@ -51,7 +51,8 @@ func (cl *Client) PostApiJobSync() {
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
 	resp, err := client.R().
 		SetBody(Build{
-			Project: GetProject(),
+			Project:   GetProject(),
+			GroupName: GetOwner(),
 		}).
 		SetHeader("Accept", "application/json").
 		SetHeader("X-token", cl.token).
