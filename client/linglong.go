@@ -41,11 +41,12 @@ func (cl *Client) PostLinglongBuildjob() {
 		SetHeader("X-token", cl.token).
 		Post(cl.host + "/api/job/linglong/build")
 
-	if resp.StatusCode() != 200 {
-		log.Fatal("trigger build fail, StatusCode not 200")
-	}
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if resp.StatusCode() != 200 {
+		log.Fatal("trigger build fail, StatusCode not 200")
 	}
 
 	var jobBuild JobTriggerJenkins

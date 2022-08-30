@@ -58,11 +58,12 @@ func (cl *Client) PostApiJobSync() {
 		SetHeader("X-token", cl.token).
 		Post(cl.host + "/api/job/sync")
 
-	if resp.StatusCode() != 200 {
-		log.Fatal("trigger build fail, StatusCode not 200")
-	}
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if resp.StatusCode() != 200 {
+		log.Fatal("trigger build fail, StatusCode not 200")
 	}
 	var jobSync JobTriggerJenkins
 	err = json.Unmarshal([]byte(resp.Body()), &jobSync)
@@ -96,11 +97,12 @@ func (cl *Client) PostApiJobAbicheck() {
 		SetHeader("X-token", cl.token).
 		Post(cl.host + "/api/job/abicheck")
 
-	if resp.StatusCode() != 200 {
-		log.Fatal("trigger build fail, StatusCode not 200")
-	}
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if resp.StatusCode() != 200 {
+		log.Fatal("trigger build fail, StatusCode not 200")
 	}
 
 	var jobAbicheck JobTriggerJenkins
@@ -124,11 +126,12 @@ func (cl *Client) PostApiJobArchlinux() {
 		SetHeader("X-token", cl.token).
 		Post(cl.host + "/api/job/archlinux")
 
-	if resp.StatusCode() != 200 {
-		log.Fatal("trigger build fail, StatusCode not 200")
-	}
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if resp.StatusCode() != 200 {
+		log.Fatal("trigger build fail, StatusCode not 200")
 	}
 
 	var jobArchlinux JobTriggerJenkins
@@ -184,11 +187,12 @@ func (cl *Client) PostApiJobBuild() {
 		SetHeader("X-token", cl.token).
 		Post(cl.host + "/api/job/build")
 
-	if resp.StatusCode() != 200 {
-		log.Fatal("trigger build fail, StatusCode not 200")
-	}
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if resp.StatusCode() != 200 {
+		log.Fatal("trigger build fail, StatusCode not 200")
 	}
 
 	var jobBuild JobTriggerJenkins
