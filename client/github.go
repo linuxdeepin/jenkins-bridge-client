@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/google/go-github/github"
 )
 
 func GetProject() string {
@@ -81,4 +83,13 @@ func (cl *Client) GetPRAuthorAndRef(owner, project string, prID int) (author, em
 		return "", "", "", fmt.Errorf("get user: %w", err)
 	}
 	return user.GetLogin(), user.GetEmail(), req.Head.GetRef(), nil
+}
+
+func (cl *Client) GetLatestTagName(owner, project string) string {
+	// get top tag
+	tags, _, err := cl.gh.Repositories.ListTags(context.Background(), owner, project, &github.ListOptions{PerPage: 1})
+	if err != nil || len(tags) < 1 {
+		return ""
+	}
+	return *tags[0].Name
 }
