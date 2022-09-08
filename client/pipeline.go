@@ -45,6 +45,43 @@ type Build struct {
 	ReversionID   string `json:"reversionID"`
 }
 
+func (cl *Client) PostTagBuild() {
+	// 发送 on_tagged 事件到 Jenkins 触发构建
+	client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
+
+	resp, err := client.R().
+		SetBody(Build{
+			Branch:       GetBranch(),
+			GroupName:    GetOwner(),
+			Project:      GetProject(),
+			RequestEvent: "on_tagged",
+			RequestId:    GetReqId(),
+			Topic:        "unstable",
+			ReversionID:  os.Getenv("GITHUB_REF_NAME"),
+		}).
+		SetHeader("Accept", "application/json").
+		SetHeader("X-token", cl.token).
+		Post(cl.host + "/api/job/build")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if resp.StatusCode() != 200 {
+		log.Fatal("trigger build fail, StatusCode not 200")
+	}
+
+	var jobBuild JobTriggerJenkins
+
+	err = json.Unmarshal([]byte(resp.Body()), &jobBuild)
+	if err != nil {
+		log.Fatal("trigger failed, response can't deserialize to jobBuild")
+	}
+
+	cl.id = jobBuild.ID
+}
+
 // triggerSync
 func (cl *Client) PostApiJobSync() {
 	client := resty.New()
