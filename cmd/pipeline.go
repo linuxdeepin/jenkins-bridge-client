@@ -59,6 +59,19 @@ var archlinuxBuildCmd = &cobra.Command{
 	},
 }
 
+var onTaggedBuildCmd = &cobra.Command{
+	Use:   "triggerTagBuild",
+	Short: "trigger Tag build",
+	Long:  `trigger jenkins to run build on special tag`,
+	Run: func(cmd *cobra.Command, args []string) {
+		cl := client.NewClient()
+		cl.SetHost(server)
+		cl.SetToken(token)
+		cl.PostTagBuild()
+		fmt.Println(cl.GetID())
+	},
+}
+
 func init() {
 	apiCheckCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
 	apiCheckCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
@@ -72,8 +85,12 @@ func init() {
 	archlinuxBuildCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
 	archlinuxBuildCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
 
+	onTaggedBuildCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
+	onTaggedBuildCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
+
 	rootCmd.AddCommand(apiCheckCmd)
 	rootCmd.AddCommand(triggerSyncCmd)
 	rootCmd.AddCommand(triggerBuildCmd)
 	rootCmd.AddCommand(archlinuxBuildCmd)
+	rootCmd.AddCommand(onTaggedBuildCmd)
 }
