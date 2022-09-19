@@ -89,7 +89,8 @@ func (cl *Client) GetLatestTagName(owner, project string) string {
 	// get top tag
 	tags, _, err := cl.gh.Repositories.ListTags(context.Background(), owner, project, &github.ListOptions{PerPage: 1})
 	if err != nil || len(tags) < 1 {
-		return ""
+		// 默认触发v23构建
+		return "1.0"
 	}
 	return *tags[0].Name
 }
