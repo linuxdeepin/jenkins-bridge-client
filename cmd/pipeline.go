@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var topic string
+
 var triggerSyncCmd = &cobra.Command{
 	Use:   "triggerSync",
 	Short: "trigger Archlinux build",
@@ -67,7 +69,7 @@ var onTaggedBuildCmd = &cobra.Command{
 		cl := client.NewClient()
 		cl.SetHost(server)
 		cl.SetToken(token)
-		cl.PostTagBuild()
+		cl.PostTagBuild(topic)
 		fmt.Println(cl.GetID())
 	},
 }
@@ -87,6 +89,7 @@ func init() {
 
 	onTaggedBuildCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
 	onTaggedBuildCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
+	onTaggedBuildCmd.Flags().StringVarP(&topic, "topic", "", "unstable", "topic repo")
 
 	rootCmd.AddCommand(apiCheckCmd)
 	rootCmd.AddCommand(triggerSyncCmd)
