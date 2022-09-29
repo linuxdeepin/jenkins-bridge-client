@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var topic string
+var repo, topic string
 
 var triggerSyncCmd = &cobra.Command{
 	Use:   "triggerSync",
@@ -69,7 +69,7 @@ var onTaggedBuildCmd = &cobra.Command{
 		cl := client.NewClient()
 		cl.SetHost(server)
 		cl.SetToken(token)
-		cl.PostTagBuild(topic)
+		cl.PostTagBuild(repo, topic)
 		fmt.Println(cl.GetID())
 	},
 }
@@ -90,6 +90,7 @@ func init() {
 	onTaggedBuildCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
 	onTaggedBuildCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
 	onTaggedBuildCmd.Flags().StringVarP(&topic, "topic", "", "unstable", "topic repo")
+	onTaggedBuildCmd.Flags().StringVarP(&repo, "repo", "", client.GetProject(), "the github repo used to build")
 
 	rootCmd.AddCommand(apiCheckCmd)
 	rootCmd.AddCommand(triggerSyncCmd)
