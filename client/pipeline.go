@@ -45,7 +45,7 @@ type Build struct {
 	ReversionID   string `json:"reversionID"`
 }
 
-func (cl *Client) PostTagBuild(topic string) {
+func (cl *Client) PostTagBuild(owner, repo, tag, topic string) {
 	// 发送 on_tagged 事件到 Jenkins 触发构建
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
@@ -53,12 +53,12 @@ func (cl *Client) PostTagBuild(topic string) {
 	resp, err := client.R().
 		SetBody(Build{
 			Branch:       GetBranch(),
-			GroupName:    GetOwner(),
-			Project:      GetProject(),
+			GroupName:    owner,
+			Project:      repo,
 			RequestEvent: "on_tagged",
 			RequestId:    GetReqId(),
 			Topic:        topic,
-			ReversionID:  os.Getenv("GITHUB_REF_NAME"),
+			ReversionID:  tag,
 		}).
 		SetHeader("Accept", "application/json").
 		SetHeader("X-token", cl.token).

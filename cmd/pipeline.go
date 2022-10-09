@@ -3,11 +3,12 @@ package cmd
 import (
 	"fmt"
 	"jenkins-bridge-client/client"
+	"os"
 
 	"github.com/spf13/cobra"
 )
 
-var topic string
+var owner, repo, tag, topic string
 
 var triggerSyncCmd = &cobra.Command{
 	Use:   "triggerSync",
@@ -69,7 +70,20 @@ var onTaggedBuildCmd = &cobra.Command{
 		cl := client.NewClient()
 		cl.SetHost(server)
 		cl.SetToken(token)
-		cl.PostTagBuild(topic)
+		cl.PostTagBuild(client.GetOwner(), client.GetProject(), os.Getenv("GITHUB_REF_NAME"), topic)
+		fmt.Println(cl.GetID())
+	},
+}
+
+var onIntergrationBuildCmd = &cobra.Command{
+	Use:   "triggerIntergrationBuild",
+	Short: "trigger Intergration build",
+	Long:  `trigger jenkins to run build on special tag for intergration`,
+	Run: func(cmd *cobra.Command, args []string) {
+		cl := client.NewClient()
+		cl.SetHost(server)
+		cl.SetToken(token)
+		cl.PostTagBuild(owner, repo, tag, topic)
 		fmt.Println(cl.GetID())
 	},
 }
@@ -91,9 +105,21 @@ func init() {
 	onTaggedBuildCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
 	onTaggedBuildCmd.Flags().StringVarP(&topic, "topic", "", "unstable", "topic repo")
 
+	onIntergrationBuildCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
+	onIntergrationBuildCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
+	onIntergrationBuildCmd.Flags().StringVarP(&topic, "owner", "", "", "repo owner")
+	onIntergrationBuildCmd.Flags().StringVarP(&topic, "repo", "", "", "repo")
+	onIntergrationBuildCmd.Flags().StringVarP(&topic, "tag", "", "", "tag")
+	onIntergrationBuildCmd.Flags().StringVarP(&topic, "topic", "", "", "topic")
+	onIntergrationBuildCmd.MarkFlagRequired("owner")
+	onIntergrationBuildCmd.MarkFlagRequired("repo")
+	onIntergrationBuildCmd.MarkFlagRequired("tag")
+	onIntergrationBuildCmd.MarkFlagRequired("topic")
+
 	rootCmd.AddCommand(apiCheckCmd)
 	rootCmd.AddCommand(triggerSyncCmd)
 	rootCmd.AddCommand(triggerBuildCmd)
 	rootCmd.AddCommand(archlinuxBuildCmd)
 	rootCmd.AddCommand(onTaggedBuildCmd)
+	rootCmd.AddCommand(onIntergrationBuildCmd)
 }
