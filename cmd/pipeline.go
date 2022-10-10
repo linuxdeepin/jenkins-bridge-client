@@ -107,9 +107,9 @@ func init() {
 
 	onIntergrationBuildCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
 	onIntergrationBuildCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
-	onIntergrationBuildCmd.Flags().StringVarP(&topic, "owner", "", "", "repo owner")
-	onIntergrationBuildCmd.Flags().StringVarP(&topic, "repo", "", "", "repo")
-	onIntergrationBuildCmd.Flags().StringVarP(&topic, "tag", "", "", "tag")
+	onIntergrationBuildCmd.Flags().StringVarP(&owner, "owner", "", "", "repo owner")
+	onIntergrationBuildCmd.Flags().StringVarP(&repo, "repo", "", "", "repo")
+	onIntergrationBuildCmd.Flags().StringVarP(&tag, "tag", "", "", "tag")
 	onIntergrationBuildCmd.Flags().StringVarP(&topic, "topic", "", "", "topic")
 	onIntergrationBuildCmd.MarkFlagRequired("owner")
 	onIntergrationBuildCmd.MarkFlagRequired("repo")
