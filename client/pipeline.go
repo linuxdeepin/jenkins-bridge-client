@@ -45,17 +45,21 @@ type Build struct {
 	ReversionID   string `json:"reversionID"`
 }
 
-func (cl *Client) PostTagBuild(owner, repo, tag, topic string) {
-	// 发送 on_tagged 事件到 Jenkins 触发构建
+func (cl *Client) PostBuildBasedOnTag(owner, repo, tag, topic, requestEvent string) {
+	// 基于tag的构建 requestEvent on_tagged(default) on_intergration 集成构建，两者采用仓库不同
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
+
+	if requestEvent == "" {
+		requestEvent = "on_tagged"
+	}
 
 	resp, err := client.R().
 		SetBody(Build{
 			Branch:       GetBranch(),
 			GroupName:    owner,
 			Project:      repo,
-			RequestEvent: "on_tagged",
+			RequestEvent: requestEvent,
 			RequestId:    GetReqId(),
 			Topic:        topic,
 			ReversionID:  tag,
