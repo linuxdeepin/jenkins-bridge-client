@@ -70,7 +70,7 @@ var onTaggedBuildCmd = &cobra.Command{
 		cl := client.NewClient()
 		cl.SetHost(server)
 		cl.SetToken(token)
-		cl.PostTagBuild(client.GetOwner(), client.GetProject(), os.Getenv("GITHUB_REF_NAME"), topic)
+		cl.PostBuildBasedOnTag(client.GetOwner(), client.GetProject(), os.Getenv("GITHUB_REF_NAME"), topic, "on_tagged")
 		fmt.Println(cl.GetID())
 	},
 }
@@ -83,7 +83,7 @@ var onIntergrationBuildCmd = &cobra.Command{
 		cl := client.NewClient()
 		cl.SetHost(server)
 		cl.SetToken(token)
-		cl.PostTagBuild(owner, repo, tag, topic)
+		cl.PostBuildBasedOnTag(owner, repo, tag, topic, "on_intergration")
 		fmt.Println(cl.GetID())
 	},
 }
