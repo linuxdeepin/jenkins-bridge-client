@@ -88,6 +88,19 @@ var onIntergrationBuildCmd = &cobra.Command{
 	},
 }
 
+var repoMergedCmd = &cobra.Command{
+	Use:   "triggerRepoMerge",
+	Short: "trigger repo merge into testing repo",
+	Long:  `trigger jenkins to merge topic repo into testing repo`,
+	Run: func(cmd *cobra.Command, args []string) {
+		cl := client.NewClient()
+		cl.SetHost(server)
+		cl.SetToken(token)
+		cl.PostRepoMerge(topic)
+		fmt.Println(cl.GetID())
+	},
+}
+
 func init() {
 	apiCheckCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
 	apiCheckCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
@@ -116,10 +129,16 @@ func init() {
 	onIntergrationBuildCmd.MarkFlagRequired("tag")
 	onIntergrationBuildCmd.MarkFlagRequired("topic")
 
+	repoMergedCmd.Flags().StringVarP(&token, "token", "", defaultToken, "jenkins bridge token")
+	repoMergedCmd.Flags().StringVarP(&server, "server", "", defaultServer, "jenkins bridge server address")
+	repoMergedCmd.Flags().StringVarP(&topic, "topic", "", "", "topic repo")
+	repoMergedCmd.MarkFlagRequired("topic")
+
 	rootCmd.AddCommand(apiCheckCmd)
 	rootCmd.AddCommand(triggerSyncCmd)
 	rootCmd.AddCommand(triggerBuildCmd)
 	rootCmd.AddCommand(archlinuxBuildCmd)
 	rootCmd.AddCommand(onTaggedBuildCmd)
 	rootCmd.AddCommand(onIntergrationBuildCmd)
+	rootCmd.AddCommand(repoMergedCmd)
 }
