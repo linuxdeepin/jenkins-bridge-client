@@ -47,7 +47,7 @@ type Build struct {
 
 type MergeInfo struct {
 	// topic repo
-	Topic string `json:"Topic"`
+	Repo string `json:"repo"`
 }
 
 // triggerSync
@@ -56,7 +56,7 @@ func (cl *Client) PostRepoMerge(topic string) {
 	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(20 * time.Second)
 	resp, err := client.R().
 		SetBody(MergeInfo{
-			Topic: topic,
+			Repo: topic,
 		}).
 		SetHeader("Accept", "application/json").
 		SetHeader("X-token", cl.token).
