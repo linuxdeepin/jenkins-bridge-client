@@ -42,7 +42,11 @@ var catCmd = &cobra.Command{
 				if err != nil {
 					log.Fatal(err)
 				}
-				defer resp.RawBody().Close()
+				defer func() {
+					if err := resp.RawBody().Close(); err != nil {
+						log.Fatal(err)
+					}
+				}()
 				io.Copy(os.Stdout, resp.RawBody())
 			}
 		}
